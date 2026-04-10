@@ -52,3 +52,17 @@ export class Bridge {
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
   }
+
+  async send(type: string, params: Record<string, unknown> = {}, nodeIds?: string[]): Promise<unknown> {
+    if (!this.isConnected()) throw new Error('Not connected to Figma plugin');
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pendingRequests.delete(requestId);
+        reject(new Error(`Request ${type} timed out after ${this.config.timeout}ms`));
+      }, this.config.timeout);
+      this.pendingRequests.set(requestId, { resolve, reject, timer });
+      const msg: BridgeRequest = { type, params, nodeIds, requestId };
+      this.ws!.send(JSON.stringify({ type: 'bridge-request', payload: msg }));
+    });
+  }
