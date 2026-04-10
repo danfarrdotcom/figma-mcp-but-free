@@ -28,3 +28,27 @@ export class Bridge {
   constructor(config: BridgeConfig) {
     this.config = { timeout: 30000, host: 'localhost', ...config };
   }
+
+  start(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.wss = new WebSocket.Server({ port: this.config.port, host: this.config.host });
+      this.wss.on('listening', () => resolve());
+      this.wss.on('error', reject);
+      this.wss.on('connection', (ws) => {
+        this.ws = ws;
+        ws.on('message', (raw) => this.handleMessage(raw.toString()));
+        ws.on('close', () => { this.ws = null; });
+      });
+    });
+  }
+
+  stop(): Promise<void> {
+    return new Promise((resolve) => {
+      this.wss?.close(() => resolve());
+      this.wss = null;
+    });
+  }
+
+  isConnected(): boolean {
+    return this.ws?.readyState === WebSocket.OPEN;
+  }
