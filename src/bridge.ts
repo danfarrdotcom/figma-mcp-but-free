@@ -66,3 +66,18 @@ export class Bridge {
       this.ws!.send(JSON.stringify({ type: 'bridge-request', payload: msg }));
     });
   }
+
+  private handleMessage(raw: string) {
+    let msg: { type: string; payload: BridgeResponse | { type: string; data?: unknown } };
+    try { msg = JSON.parse(raw); } catch { return; }
+    if (msg.type === 'bridge-response' && 'requestId' in msg.payload) {
+      const resp = msg.payload as BridgeResponse;
+      const pending = this.pendingRequests.get(resp.requestId);
+      if (pending) {
+        clearTimeout(pending.timer);
+        this.pendingRequests.delete(resp.requestId);
+        if (resp.error) pending.reject(new Error(resp.error));
+        else pending.resolve(resp.data);
+      }
+    }
+  }
