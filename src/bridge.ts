@@ -81,3 +81,16 @@ export class Bridge {
       }
     }
   }
+
+  onProgress(callback: (data: unknown) => void) {
+    const orig = this.handleMessage.bind(this);
+    this.handleMessage = (raw: string) => {
+      let msg: { type: string; payload: unknown };
+      try { msg = JSON.parse(raw); } catch { orig(raw); return; }
+      if (msg.type === 'bridge-progress') {
+        callback(msg.payload);
+        return;
+      }
+      orig(raw);
+    };
+  }
