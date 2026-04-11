@@ -23,6 +23,10 @@ interface PendingRequest {
   timer: NodeJS.Timeout;
 }
 
+/**
+ * Bridge manages the WebSocket connection from the Figma plugin.
+ * Only one plugin connection is maintained at a time.
+ */
 export class Bridge {
   private wss: WebSocketServer | null = null;
   private conn: WebSocket | null = null;
@@ -43,7 +47,19 @@ export class Bridge {
 
       ws.on("message", (raw) => {
         const resp: BridgeResponse = JSON.parse(raw.toString());
+
+        // Progress update — extend timeout
+        if (resp.progress && resp.requestId) {
+          const entry = this.pending.get(resp.requestId);
+          if (entry) {
+            clearTimeout(entry.timer);
+            entry.timer = setTimeout(() => this.timeout(resp.requestId), 60_000);
+          }
+          return;
+        }
+
         if (!resp.requestId) return;
+
         const entry = this.pending.get(resp.requestId);
         if (!entry) return;
         this.pending.delete(resp.requestId);
@@ -64,15 +80,22 @@ export class Bridge {
     console.error(`[bridge] listening on ws://127.0.0.1:${port}`);
   }
 
-  send(type: string, nodeIds?: string[], params?: Record<string, unknown>): Promise<BridgeResponse> {
+  send(
+    type: string,
+    nodeIds?: string[],
+    params?: Record<string, unknown>
+  ): Promise<BridgeResponse> {
     if (!this.conn || this.conn.readyState !== WebSocket.OPEN) {
       return Promise.reject(new Error("Plugin not connected. Run the Figma plugin first."));
     }
+
     const requestId = randomUUID().slice(0, 8);
     const timeout = type === "get_document" ? 60_000 : 30_000;
+
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.timeout(requestId), timeout);
       this.pending.set(requestId, { resolve, reject, timer });
+
       const req: BridgeRequest = { type, requestId, nodeIds, params };
       this.conn!.send(JSON.stringify(req));
     });
