@@ -94,3 +94,19 @@ export class Bridge {
       orig(raw);
     };
   }
+
+  replaceConnection(ws: WebSocket) {
+    if (this.ws) this.ws.close();
+    this.ws = ws;
+    ws.on('message', (raw) => this.handleMessage(raw.toString()));
+    ws.on('close', () => { this.ws = null; });
+  }
+
+  getConnectionInfo() {
+    return {
+      connected: this.isConnected(),
+      pendingCount: this.pendingRequests.size,
+      serverPort: this.config.port,
+    };
+  }
+}
