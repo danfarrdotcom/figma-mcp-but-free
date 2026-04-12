@@ -1,15 +1,14 @@
 /**
- * Normalize node IDs from hyphen format (LLM artifact) to colon format.
- * "4029-12345" → "4029:12345"
+ * Normalize a Figma node ID to the canonical format.
+ * Handles both "1234:5678" and "I1234:5678;1234:5679" formats.
  */
 export function normalizeNodeId(id: string): string {
-  if (id.includes("-") && !id.includes(":")) {
-    const normalized = id.replace(/-/g, ":");
-    if (/^I?\d+:\d+(;\d+:\d+)*$/.test(normalized)) return normalized;
-  }
-  return id;
+  return id.replace(/^I/, '').split(';')[0];
 }
 
+/**
+ * Validate that a node ID looks like a valid Figma ID.
+ */
 export function validNodeId(id: string): boolean {
-  return /^I?\d+:\d+(;\d+:\d+)*$/.test(id);
+  return /^\d+:\d+$/.test(id);
 }
