@@ -29,3 +29,24 @@ export function chunk<T>(arr: T[], size: number): T[][] {
   for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
   return result;
 }
+
+/**
+ * Convert Figma RGBA color to CSS hex string.
+ */
+export function rgbaToHex(r: number, g: number, b: number, a?: number): string {
+  const toHex = (v: number) => Math.round(v * 255).toString(16).padStart(2, '0');
+  const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  return a !== undefined && a < 1 ? `${hex}${toHex(a)}` : hex;
+}
+
+/**
+ * Convert CSS hex color to Figma RGBA.
+ */
+export function hexToRgba(hex: string): { r: number; g: number; b: number; a: number } {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.slice(0, 2), 16) / 255;
+  const g = parseInt(clean.slice(2, 4), 16) / 255;
+  const b = parseInt(clean.slice(4, 6), 16) / 255;
+  const a = clean.length === 8 ? parseInt(clean.slice(6, 8), 16) / 255 : 1;
+  return { r, g, b, a };
+}
