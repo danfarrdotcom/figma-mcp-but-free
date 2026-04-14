@@ -17,3 +17,18 @@ describe('validNodeId', () => {
     expect(validNodeId('abc')).toBe(false);
   });
 });
+
+describe('parseNodeIds', () => {
+  it('splits comma-separated string', () => {
+    expect(parseNodeIds('1:2,3:4')).toEqual(['1:2', '3:4']);
+  });
+  it('returns array as-is', () => {
+    expect(parseNodeIds(['1:2', '3:4'])).toEqual(['1:2', '3:4']);
+  });
+});
+
+describe('chunk', () => {
+  it('splits array into chunks', () => {
+    expect(chunk([1,2,3,4,5], 2)).toEqual([[1,2],[3,4],[5]]);
+  });
+});
