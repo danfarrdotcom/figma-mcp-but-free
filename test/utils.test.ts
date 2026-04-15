@@ -32,3 +32,21 @@ describe('chunk', () => {
     expect(chunk([1,2,3,4,5], 2)).toEqual([[1,2],[3,4],[5]]);
   });
 });
+import { rgbaToHex, hexToRgba } from '../src/utils.js';
+
+describe('rgbaToHex', () => {
+  it('converts full opacity colors', () => {
+    expect(rgbaToHex(1, 0, 0)).toBe('#ff0000');
+  });
+  it('includes alpha when provided', () => {
+    expect(rgbaToHex(1, 0, 0, 0.5)).toMatch(/#ff0000[0-9a-f]{2}/);
+  });
+});
+
+describe('hexToRgba', () => {
+  it('parses 6-digit hex', () => {
+    const c = hexToRgba('#ff0000');
+    expect(c.r).toBeCloseTo(1);
+    expect(c.a).toBe(1);
+  });
+});
