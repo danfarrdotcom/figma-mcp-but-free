@@ -15,3 +15,9 @@ describe('Bridge', () => {
       expect(info.pendingCount).toBe(0);
     });
   });
+
+  describe('send', () => {
+    it('throws when not connected', async () => {
+      await expect(bridge.send('get_document')).rejects.toThrow('Not connected');
+    });
+  });
