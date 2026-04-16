@@ -21,3 +21,10 @@ describe('Bridge', () => {
       await expect(bridge.send('get_document')).rejects.toThrow('Not connected');
     });
   });
+
+  describe('error handling', () => {
+    it('rejects on invalid JSON gracefully', () => {
+      expect(() => bridge['handleMessage']('not json')).not.toThrow();
+    });
+  });
+});
