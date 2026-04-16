@@ -28,3 +28,12 @@ describe('Bridge', () => {
     });
   });
 });
+// Extended tests for connection replacement and timeout
+describe('Bridge connection replacement', () => {
+  it('can replace a connection', () => {
+    const bridge = new Bridge({ port: 0 });
+    const mockWs = { readyState: 1, on: () => {}, send: () => {}, close: () => {} } as any;
+    bridge.replaceConnection(mockWs);
+    expect(bridge.isConnected()).toBe(true);
+  });
+});
