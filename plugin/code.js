@@ -115,3 +115,97 @@ function getReactions(nodeId) {
   if (!node || !('reactions' in node)) return [];
   return node.reactions;
 }
+// Add these functions to the end of plugin/code.js
+
+function getDesignContext(nodeIds, params) {
+  const depth = params?.depth ?? 2;
+  const detail = params?.detail || 'compact';
+  const root = nodeIds?.[0] ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
+  return serializeNodeWithDetail(root, depth, detail);
+}
+
+function serializeNodeWithDetail(node, depth, detail) {
+  if (!node) return null;
+  const base = { id: node.id, name: node.name, type: node.type };
+  if (detail === 'minimal') {
+    if ('x' in node) { base.x = node.x; base.y = node.y; }
+    if ('width' in node) { base.width = node.width; base.height = node.height; }
+  } else if (detail === 'compact') {
+    if ('x' in node) { base.x = node.x; base.y = node.y; }
+    if ('width' in node) { base.width = node.width; base.height = node.height; }
+    base.visible = node.visible;
+    if ('characters' in node) base.characters = node.characters;
+    if ('layoutMode' in node && node.layoutMode !== 'NONE') base.layoutMode = node.layoutMode;
+    if ('fills' in node && node.fills !== figma.mixed && node.fills.length > 0) base.fillCount = node.fills.length;
+  } else {
+    return serializeNode(node, depth);
+  }
+  if (depth > 0 && 'children' in node) {
+    base.children = node.children.map(c => serializeNodeWithDetail(c, depth - 1, detail));
+  }
+  return base;
+}
+
+function searchNodes(params) {
+  const root = params.nodeId ? figma.getNodeById(params.nodeId) : figma.currentPage;
+  if (!root || !('findAll' in root)) return [];
+  const query = params.query.toLowerCase();
+  const limit = params.limit || 100;
+  let results = root.findAll(n => {
+    if (params.type && n.type !== params.type) return false;
+    return n.name.toLowerCase().includes(query);
+  });
+  return results.slice(0, limit).map(n => serializeNode(n, 0));
+}
+
+function scanTextNodes(params) {
+  const root = figma.getNodeById(params.nodeId);
+  if (!root || !('findAll' in root)) return [];
+  return root.findAll(n => n.type === 'TEXT').map(n => ({ id: n.id, name: n.name, characters: n.characters }));
+}
+
+function scanNodesByTypes(params) {
+  const root = figma.getNodeById(params.nodeId);
+  if (!root || !('findAll' in root)) return [];
+  const types = params.types.map(t => t.toUpperCase());
+  return root.findAll(n => types.includes(n.type)).map(n => serializeNode(n, 0));
+}
+
+async function getScreenshot(nodeIds, params) {
+  const node = nodeIds?.[0] ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
+  if (!node || !('exportAsync' in node)) throw new Error('Node not exportable');
+  const format = params?.format || 'PNG';
+  const scale = params?.scale || 2;
+  const settings = { format, ...(format !== 'SVG' ? { constraint: { type: 'SCALE', value: scale } } : {}) };
+  const bytes = await node.exportAsync(settings);
+  const base64 = figma.base64Encode(bytes);
+  return { exports: [{ nodeId: node.id, nodeName: node.name, base64, width: node.width, height: node.height }] };
+}
+
+function exportTokens(params) {
+  const format = params?.format || 'json';
+  const collections = figma.variables.getLocalVariableCollections();
+  const paintStyles = figma.getLocalPaintStyles();
+  const tokens = { variables: {}, colors: {} };
+  collections.forEach(c => {
+    c.variableIds.forEach(vid => {
+      const v = figma.variables.getVariableById(vid);
+      if (v) tokens.variables[v.name] = v.valuesByMode;
+    });
+  });
+  paintStyles.forEach(s => { tokens.colors[s.name] = s.paints; });
+  if (format === 'css') return tokensToCSS(tokens);
+  return tokens;
+}
+
+function tokensToCSS(tokens) {
+  let css = ':root {\n';
+  for (const [name, value] of Object.entries(tokens.colors)) {
+    if (Array.isArray(value) && value[0]?.color) {
+      const c = value[0].color;
+      css += `  --${name.replace(/\s+/g, '-').toLowerCase()}: rgba(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)}, ${c.a ?? 1});\n`;
+    }
+  }
+  css += '}\n';
+  return css;
+}
