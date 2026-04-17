@@ -37,3 +37,20 @@ describe('Bridge connection replacement', () => {
     expect(bridge.isConnected()).toBe(true);
   });
 });
+
+describe('Bridge timeout', () => {
+  it('uses configured timeout', () => {
+    const bridge = new Bridge({ port: 0, timeout: 5000 });
+    expect(bridge['config'].timeout).toBe(5000);
+  });
+});
+
+describe('Bridge progress', () => {
+  it('accepts progress callback', () => {
+    const bridge = new Bridge({ port: 0 });
+    const calls: unknown[] = [];
+    bridge.onProgress((d) => calls.push(d));
+    bridge['handleMessage'](JSON.stringify({ type: 'bridge-progress', payload: { status: 'ok' } }));
+    expect(calls).toEqual([{ status: 'ok' }]);
+  });
+});
