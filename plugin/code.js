@@ -158,3 +158,77 @@ function tokensToCSS(tokens) {
   css += '}\n';
   return css;
 }
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? { r: parseInt(result[1], 16) / 255, g: parseInt(result[2], 16) / 255, b: parseInt(result[3], 16) / 255, a: 1 } : null;
+}
+
+function getParent(node) {
+  return node.parent && node.parent.type !== 'DOCUMENT' ? node.parent : null;
+}
+
+function createFrame(params) {
+  const frame = figma.createFrame();
+  applyNodeProps(frame, params);
+  if (params.name) frame.name = params.name;
+  if (params.layoutMode) frame.layoutMode = params.layoutMode;
+  if (params.itemSpacing !== undefined) frame.itemSpacing = params.itemSpacing;
+  if (params.paddingTop !== undefined) frame.paddingTop = params.paddingTop;
+  if (params.paddingBottom !== undefined) frame.paddingBottom = params.paddingBottom;
+  if (params.paddingLeft !== undefined) frame.paddingLeft = params.paddingLeft;
+  if (params.paddingRight !== undefined) frame.paddingRight = params.paddingRight;
+  return { id: frame.id, name: frame.name, type: frame.type };
+}
+
+function createRectangle(params) {
+  const rect = figma.createRectangle();
+  applyNodeProps(rect, params);
+  if (params.name) rect.name = params.name;
+  if (params.cornerRadius !== undefined) rect.cornerRadius = params.cornerRadius;
+  return { id: rect.id, name: rect.name, type: rect.type };
+}
+
+function createEllipse(params) {
+  const ellipse = figma.createEllipse();
+  applyNodeProps(ellipse, params);
+  if (params.name) ellipse.name = params.name;
+  return { id: ellipse.id, name: ellipse.name, type: ellipse.type };
+}
+
+function createText(params) {
+  const text = figma.createText();
+  applyNodeProps(text, params);
+  if (params.name) text.name = params.name;
+  if (params.characters) text.characters = params.characters;
+  if (params.fontSize) text.fontSize = params.fontSize;
+  if (params.fontName) text.fontName = params.fontName;
+  return { id: text.id, name: text.name, type: text.type };
+}
+
+function createComponentInstance(params) {
+  const component = figma.getNodeById(params.componentId);
+  if (!component || component.type !== 'COMPONENT') throw new Error('Invalid component ID');
+  const instance = component.createInstance();
+  applyNodeProps(instance, params);
+  return { id: instance.id, name: instance.name, type: instance.type };
+}
+
+function createSection(params) {
+  const section = figma.createSection();
+  applyNodeProps(section, params);
+  if (params.name) section.name = params.name;
+  return { id: section.id, name: section.name, type: section.type };
+}
+
+function applyNodeProps(node, params) {
+  if (params.x !== undefined) node.x = params.x;
+  if (params.y !== undefined) node.y = params.y;
+  if (params.width !== undefined && params.height !== undefined) node.resize(params.width, params.height);
+  if (params.fills) node.fills = params.fills;
+  if (params.strokes) node.strokes = params.strokes;
+  if (params.strokeWeight !== undefined) node.strokeWeight = params.strokeWeight;
+  if (params.opacity !== undefined) node.opacity = params.opacity;
+  const parent = params.parentId ? figma.getNodeById(params.parentId) : figma.currentPage;
+  if (parent && 'appendChild' in parent) parent.appendChild(node);
+}
