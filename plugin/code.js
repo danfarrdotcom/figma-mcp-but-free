@@ -28,6 +28,10 @@ async function handleRequest(req) {
     case 'get_fonts': return getFonts();
     case 'get_annotations': return [];
     case 'get_reactions': return getReactions(nodeIds[0]);
+    case 'get_design_context': return getDesignContext(nodeIds, params);
+    case 'search_nodes': return searchNodes(params);
+    case 'scan_text_nodes': return scanTextNodes(params);
+    case 'scan_nodes_by_types': return scanNodesByTypes(params);
     default: throw new Error(`Unknown tool: ${type}`);
   }
 }
@@ -46,6 +50,14 @@ function serializeNode(node, depth = 1) {
   if ('opacity' in node) base.opacity = node.opacity;
   if ('cornerRadius' in node) base.cornerRadius = node.cornerRadius;
   if ('characters' in node) base.characters = node.characters;
+  if ('layoutMode' in node && node.layoutMode !== 'NONE') {
+    base.layoutMode = node.layoutMode;
+    base.itemSpacing = node.itemSpacing;
+    base.paddingTop = node.paddingTop;
+    base.paddingBottom = node.paddingBottom;
+    base.paddingLeft = node.paddingLeft;
+    base.paddingRight = node.paddingRight;
+  }
   if (depth > 0 && 'children' in node) {
     base.children = node.children.map(c => serializeNode(c, depth - 1));
   }
@@ -100,4 +112,58 @@ function getReactions(nodeId) {
   const node = figma.getNodeById(nodeId);
   if (!node || !('reactions' in node)) return [];
   return node.reactions;
+}
+
+function getDesignContext(nodeIds, params) {
+  const depth = params?.depth ?? 2;
+  const detail = params?.detail || 'compact';
+  const root = nodeIds?.[0] ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
+  return serializeNodeWithDetail(root, depth, detail);
+}
+
+function serializeNodeWithDetail(node, depth, detail) {
+  if (!node) return null;
+  const base = { id: node.id, name: node.name, type: node.type };
+  if (detail === 'minimal') {
+    if ('x' in node) { base.x = node.x; base.y = node.y; }
+    if ('width' in node) { base.width = node.width; base.height = node.height; }
+  } else if (detail === 'compact') {
+    if ('x' in node) { base.x = node.x; base.y = node.y; }
+    if ('width' in node) { base.width = node.width; base.height = node.height; }
+    base.visible = node.visible;
+    if ('characters' in node) base.characters = node.characters;
+    if ('layoutMode' in node && node.layoutMode !== 'NONE') base.layoutMode = node.layoutMode;
+    if ('fills' in node && node.fills !== figma.mixed && node.fills.length > 0) base.fillCount = node.fills.length;
+  } else {
+    return serializeNode(node, depth);
+  }
+  if (depth > 0 && 'children' in node) {
+    base.children = node.children.map(c => serializeNodeWithDetail(c, depth - 1, detail));
+  }
+  return base;
+}
+
+function searchNodes(params) {
+  const root = params.nodeId ? figma.getNodeById(params.nodeId) : figma.currentPage;
+  if (!root || !('findAll' in root)) return [];
+  const query = params.query.toLowerCase();
+  const limit = params.limit || 100;
+  let results = root.findAll(n => {
+    if (params.type && n.type !== params.type) return false;
+    return n.name.toLowerCase().includes(query);
+  });
+  return results.slice(0, limit).map(n => serializeNode(n, 0));
+}
+
+function scanTextNodes(params) {
+  const root = figma.getNodeById(params.nodeId);
+  if (!root || !('findAll' in root)) return [];
+  return root.findAll(n => n.type === 'TEXT').map(n => ({ id: n.id, name: n.name, characters: n.characters }));
+}
+
+function scanNodesByTypes(params) {
+  const root = figma.getNodeById(params.nodeId);
+  if (!root || !('findAll' in root)) return [];
+  const types = params.types.map(t => t.toUpperCase());
+  return root.findAll(n => types.includes(n.type)).map(n => serializeNode(n, 0));
 }
