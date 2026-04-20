@@ -334,3 +334,28 @@ function applyStyle(params) {
   if (style.type === 'GRID' && 'gridStyleId' in node) node.gridStyleId = style.id;
   return { id: node.id, name: node.name, appliedStyleId: style.id };
 }
+
+function createVariable(params) {
+  const collection = figma.variables.getVariableCollectionById(params.collectionId);
+  if (!collection) throw new Error('Collection not found');
+  const variable = figma.variables.createVariable(params.name, collection.id, params.resolvedType);
+  const firstMode = collection.modes[0]?.modeId;
+  if (firstMode && params.defaultValue !== undefined) {
+    figma.variables.setVariableValue(variable, { [firstMode]: params.defaultValue });
+  }
+  return { id: variable.id, name: variable.name, resolvedType: variable.resolvedType };
+}
+
+function setVariableValue(params) {
+  const variable = figma.variables.getVariableById(params.variableId);
+  if (!variable) throw new Error('Variable not found');
+  figma.variables.setVariableValue(variable, { [params.modeId]: params.value });
+  return { variableId: variable.id, modeId: params.modeId, value: params.value };
+}
+
+function switchVariableCollection(params) {
+  const collections = figma.variables.getLocalVariableCollections();
+  const target = collections.find(c => c.id === params.collectionId);
+  if (!target) throw new Error('Collection not found');
+  return { id: target.id, name: target.name, modes: target.modes, variableCount: target.variableIds.length };
+}
