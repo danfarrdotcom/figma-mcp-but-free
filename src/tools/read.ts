@@ -20,6 +20,8 @@ const readToolDefs = [
   { name: 'get_annotations', description: 'Get annotations on nodes', inputSchema: { nodeId: z.string().optional() } },
   { name: 'get_fonts', description: 'Get font usage statistics from the current page', inputSchema: {} },
   { name: 'get_reactions', description: 'Get prototype reactions on a node', inputSchema: { nodeId: z.string() } },
+  { name: 'get_screenshot', description: 'Take a screenshot of a node or page as base64', inputSchema: { nodeId: z.string().optional(), format: z.enum(['PNG', 'JPG', 'SVG', 'PDF']).optional(), scale: z.number().optional() } },
+  { name: 'export_tokens', description: 'Export design tokens (variables, colors) as JSON or CSS', inputSchema: { format: z.enum(['json', 'css']).optional() } },
 ];
 
 export function registerReadTools(server: McpServer, bridge: Bridge) {
