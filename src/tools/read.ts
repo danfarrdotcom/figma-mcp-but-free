@@ -13,6 +13,13 @@ const readToolDefs = [
   { name: 'search_nodes', description: 'Search nodes by name and type within a subtree', inputSchema: { nodeId: z.string().optional(), query: z.string(), type: z.string().optional(), limit: z.number().optional() } },
   { name: 'scan_text_nodes', description: 'Find all text nodes in a subtree', inputSchema: { nodeId: z.string() } },
   { name: 'scan_nodes_by_types', description: 'Find all nodes matching specific types', inputSchema: { nodeId: z.string(), types: z.array(z.string()) } },
+  { name: 'get_viewport', description: 'Get current viewport center, zoom, and bounds', inputSchema: {} },
+  { name: 'get_styles', description: 'Get all local paint, text, effect, and grid styles', inputSchema: {} },
+  { name: 'get_variable_defs', description: 'Get variable definitions from local collections', inputSchema: {} },
+  { name: 'get_local_components', description: 'Get local components and component sets', inputSchema: {} },
+  { name: 'get_annotations', description: 'Get annotations on nodes', inputSchema: { nodeId: z.string().optional() } },
+  { name: 'get_fonts', description: 'Get font usage statistics from the current page', inputSchema: {} },
+  { name: 'get_reactions', description: 'Get prototype reactions on a node', inputSchema: { nodeId: z.string() } },
 ];
 
 export function registerReadTools(server: McpServer, bridge: Bridge) {
