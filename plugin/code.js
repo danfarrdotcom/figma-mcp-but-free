@@ -232,3 +232,64 @@ function applyNodeProps(node, params) {
   const parent = params.parentId ? figma.getNodeById(params.parentId) : figma.currentPage;
   if (parent && 'appendChild' in parent) parent.appendChild(node);
 }
+
+function setText(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node || node.type !== 'TEXT') throw new Error('Node is not a text node');
+  if (params.characters !== undefined) node.characters = params.characters;
+  if (params.fontSize !== undefined) node.fontSize = params.fontSize;
+  if (params.fontName !== undefined) node.fontName = params.fontName;
+  if (params.textAlignHorizontal !== undefined) node.textAlignHorizontal = params.textAlignHorizontal;
+  if (params.textAlignVertical !== undefined) node.textAlignVertical = params.textAlignVertical;
+  if (params.letterSpacing !== undefined) node.letterSpacing = params.letterSpacing;
+  if (params.lineHeight !== undefined) node.lineHeight = params.lineHeight;
+  return { id: node.id, name: node.name, characters: node.characters };
+}
+
+function setFills(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node || !('fills' in node)) throw new Error('Node does not support fills');
+  node.fills = params.fills;
+  return { id: node.id, name: node.name, fills: node.fills };
+}
+
+function setStrokes(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node || !('strokes' in node)) throw new Error('Node does not support strokes');
+  node.strokes = params.strokes;
+  if (params.strokeWeight !== undefined) node.strokeWeight = params.strokeWeight;
+  if (params.strokeAlign !== undefined) node.strokeAlign = params.strokeAlign;
+  return { id: node.id, name: node.name, strokes: node.strokes };
+}
+
+function setOpacity(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!('opacity' in node)) throw new Error('Node does not support opacity');
+  node.opacity = params.opacity;
+  return { id: node.id, name: node.name, opacity: node.opacity };
+}
+
+function setVisibility(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!('visible' in node)) throw new Error('Node does not support visibility');
+  node.visible = params.visible;
+  return { id: node.id, name: node.name, visible: node.visible };
+}
+
+function setDimensions(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!('resize' in node)) throw new Error('Node does not support resizing');
+  const w = params.width ?? node.width;
+  const h = params.height ?? node.height;
+  node.resize(w, h);
+  if (params.x !== undefined) node.x = params.x;
+  if (params.y !== undefined) node.y = params.y;
+  return { id: node.id, name: node.name, width: node.width, height: node.height, x: node.x, y: node.y };
+}
+
+function setRotation(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!('rotation' in node)) throw new Error('Node does not support rotation');
+  node.rotation = params.rotation;
+  return { id: node.id, name: node.name, rotation: node.rotation };
+}
