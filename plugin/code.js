@@ -209,3 +209,46 @@ function tokensToCSS(tokens) {
   css += '}\n';
   return css;
 }
+
+async function getDesignContext(nodeIds, params) {
+  const depth = params?.depth ?? 2;
+  const detail = params?.detail || 'compact';
+  const root = nodeIds?.[0] ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
+  return serializeNodeWithDetail(root, depth, detail);
+}
+
+function serializeNodeWithDetail(node, depth, detail) {
+  if (!node) return null;
+  const base = { id: node.id, name: node.name, type: node.type };
+  if (detail === 'minimal') {
+    if ('x' in node) { base.x = node.x; base.y = node.y; }
+    if ('width' in node) { base.width = node.width; base.height = node.height; }
+  } else if (detail === 'compact') {
+    if ('x' in node) { base.x = node.x; base.y = node.y; }
+    if ('width' in node) { base.width = node.width; base.height = node.height; }
+    base.visible = node.visible;
+    if ('characters' in node) base.characters = node.characters;
+    if ('layoutMode' in node && node.layoutMode !== 'NONE') base.layoutMode = node.layoutMode;
+    if ('fills' in node && node.fills !== figma.mixed && node.fills.length > 0) base.fillCount = node.fills.length;
+  } else {
+    return serializeNode(node, depth);
+  }
+  if (depth > 0 && 'children' in node) {
+    base.children = node.children.map(c => serializeNodeWithDetail(c, depth - 1, detail));
+  }
+  return base;
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16) / 255,
+    g: parseInt(result[2], 16) / 255,
+    b: parseInt(result[3], 16) / 255,
+    a: 1,
+  } : null;
+}
+
+function getParent(node) {
+  return node.parent && node.parent.type !== 'DOCUMENT' ? node.parent : null;
+}
