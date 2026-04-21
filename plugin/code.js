@@ -390,3 +390,23 @@ function setOverlay(params) {
   }];
   return { id: node.id, name: node.name };
 }
+
+function createPage(params) {
+  const page = figma.createPage();
+  page.name = params.name || 'New Page';
+  return { id: page.id, name: page.name };
+}
+
+function reorderPages(params) {
+  const root = figma.root;
+  const newOrder = params.pageIds.map(id => figma.getNodeById(id)).filter(Boolean);
+  root.children = newOrder;
+  return root.children.map(p => ({ id: p.id, name: p.name }));
+}
+
+function navigateToPage(params) {
+  const page = figma.getNodeById(params.pageId);
+  if (!page || page.type !== 'PAGE') throw new Error('Invalid page ID');
+  figma.currentPage = page;
+  return { id: page.id, name: page.name };
+}
