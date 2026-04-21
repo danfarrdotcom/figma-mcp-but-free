@@ -410,3 +410,57 @@ function navigateToPage(params) {
   figma.currentPage = page;
   return { id: page.id, name: page.name };
 }
+
+function groupNodes(params) {
+  const nodes = params.nodeIds.map(id => figma.getNodeById(id)).filter(Boolean);
+  if (nodes.length === 0) throw new Error('No valid nodes provided');
+  const frame = figma.group(nodes, nodes[0].parent || figma.currentPage);
+  if (params.name) frame.name = params.name;
+  return { id: frame.id, name: frame.name, childCount: frame.children.length };
+}
+
+function ungroupNode(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node || !('children' in node)) throw new Error('Node is not a group');
+  const parent = node.parent;
+  const idx = parent ? parent.children.indexOf(node) : 0;
+  const children = [...node.children];
+  for (const child of children) { parent?.insertChild(idx, child); }
+  node.remove();
+  return { ungrouped: children.map(c => ({ id: c.id, name: c.name })) };
+}
+
+function swapComponent(params) {
+  const instance = figma.getNodeById(params.nodeId);
+  if (!instance || instance.type !== 'INSTANCE') throw new Error('Node is not a component instance');
+  const newComponent = figma.getNodeById(params.newComponentId);
+  if (!newComponent || newComponent.type !== 'COMPONENT') throw new Error('Invalid component ID');
+  instance.swapComponent(newComponent);
+  return { id: instance.id, name: instance.name, componentId: newComponent.id };
+}
+
+function detachInstance(params) {
+  const instance = figma.getNodeById(params.nodeId);
+  if (!instance || instance.type !== 'INSTANCE') throw new Error('Node is not a component instance');
+  instance.detachInstance();
+  return { id: instance.id, name: instance.name, type: instance.type };
+}
+
+function deleteNode(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node) throw new Error('Node not found');
+  const name = node.name;
+  node.remove();
+  return { deleted: name };
+}
+
+function moveNode(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node) throw new Error('Node not found');
+  const parent = figma.getNodeById(params.parentId);
+  if (!parent || !('appendChild' in parent)) throw new Error('Invalid parent');
+  parent.appendChild(node);
+  if (params.x !== undefined) node.x = params.x;
+  if (params.y !== undefined) node.y = params.y;
+  return { id: node.id, name: node.name, parentId: parent.id };
+}
