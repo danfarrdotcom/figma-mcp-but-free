@@ -382,3 +382,45 @@ function setRotation(params) {
   node.rotation = params.rotation;
   return { id: node.id, name: node.name, rotation: node.rotation };
 }
+
+// Style handlers
+function createPaintStyle(params) {
+  const style = figma.createPaintStyle();
+  style.name = params.name;
+  style.paints = params.paints;
+  return { id: style.id, name: style.name, paints: style.paints };
+}
+
+function createTextStyle(params) {
+  const style = figma.createTextStyle();
+  style.name = params.name;
+  if (params.fontSize) style.fontSize = params.fontSize;
+  if (params.fontName) style.fontName = params.fontName;
+  return { id: style.id, name: style.name, fontSize: style.fontSize, fontName: style.fontName };
+}
+
+function createEffectStyle(params) {
+  const style = figma.createEffectStyle();
+  style.name = params.name;
+  style.effects = params.effects;
+  return { id: style.id, name: style.name, effects: style.effects };
+}
+
+function createGridStyle(params) {
+  const style = figma.createGridStyle();
+  style.name = params.name;
+  style.layoutGrids = params.layoutGrids;
+  return { id: style.id, name: style.name, grids: style.layoutGrids };
+}
+
+function applyStyle(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node) throw new Error('Node not found');
+  const style = figma.getStyleById(params.styleId);
+  if (!style) throw new Error('Style not found');
+  if (style.type === 'PAINT' && 'fillStyleId' in node) node.fillStyleId = style.id;
+  if (style.type === 'TEXT' && 'textStyleId' in node) node.textStyleId = style.id;
+  if (style.type === 'EFFECT' && 'effectStyleId' in node) node.effectStyleId = style.id;
+  if (style.type === 'GRID' && 'gridStyleId' in node) node.gridStyleId = style.id;
+  return { id: node.id, name: node.name, appliedStyleId: style.id };
+}
