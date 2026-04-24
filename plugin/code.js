@@ -424,3 +424,22 @@ function applyStyle(params) {
   if (style.type === 'GRID' && 'gridStyleId' in node) node.gridStyleId = style.id;
   return { id: node.id, name: node.name, appliedStyleId: style.id };
 }
+
+// Variable handlers
+function createVariable(params) {
+  const collection = figma.variables.getVariableCollectionById(params.collectionId);
+  if (!collection) throw new Error('Collection not found');
+  const variable = figma.variables.createVariable(params.name, collection.id, params.resolvedType);
+  const firstMode = collection.modes[0]?.modeId;
+  if (firstMode && params.defaultValue !== undefined) {
+    figma.variables.setVariableValue(variable, { [firstMode]: params.defaultValue });
+  }
+  return { id: variable.id, name: variable.name, resolvedType: variable.resolvedType };
+}
+
+function setVariableValue(params) {
+  const variable = figma.variables.getVariableById(params.variableId);
+  if (!variable) throw new Error('Variable not found');
+  figma.variables.setVariableValue(variable, { [params.modeId]: params.value });
+  return { variableId: variable.id, modeId: params.modeId, value: params.value };
+}
