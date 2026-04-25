@@ -443,3 +443,10 @@ function setVariableValue(params) {
   figma.variables.setVariableValue(variable, { [params.modeId]: params.value });
   return { variableId: variable.id, modeId: params.modeId, value: params.value };
 }
+
+function switchVariableCollection(params) {
+  const collections = figma.variables.getLocalVariableCollections();
+  const target = collections.find(c => c.id === params.collectionId);
+  if (!target) throw new Error('Collection not found');
+  return { id: target.id, name: target.name, modes: target.modes, variableCount: target.variableIds.length };
+}
