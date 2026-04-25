@@ -450,3 +450,25 @@ function switchVariableCollection(params) {
   if (!target) throw new Error('Collection not found');
   return { id: target.id, name: target.name, modes: target.modes, variableCount: target.variableIds.length };
 }
+
+// Prototype reaction handlers
+function addReaction(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node || !('reactions' in node)) throw new Error('Node does not support reactions');
+  const reactions = node.reactions || [];
+  reactions.push({ trigger: params.trigger, action: params.action });
+  node.reactions = reactions;
+  return { id: node.id, reactionCount: reactions.length };
+}
+
+function setNavigation(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node) throw new Error('Node not found');
+  const destination = figma.getNodeById(params.destinationId);
+  if (!destination) throw new Error('Destination not found');
+  node.reactions = [{
+    trigger: { type: params.triggerType || 'ON_CLICK' },
+    action: { type: 'NAVIGATE', destination, navigation: params.navigation || 'NAVIGATE' },
+  }];
+  return { id: node.id, name: node.name, destinationId: destination.id };
+}
