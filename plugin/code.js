@@ -472,3 +472,13 @@ function setNavigation(params) {
   }];
   return { id: node.id, name: node.name, destinationId: destination.id };
 }
+
+function setOverlay(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node) throw new Error('Node not found');
+  node.reactions = [{
+    trigger: { type: params.triggerType || 'ON_CLICK' },
+    action: { type: 'OPEN_OVERLAY', overlay: node, overlayBackground: params.overlayBackground || { type: 'BACKGROUND_BLUR', color: { r: 0, g: 0, b: 0, a: 0.2 } } },
+  }];
+  return { id: node.id, name: node.name };
+}
