@@ -1,112 +1,125 @@
-import WebSocket from 'ws';
+import { randomUUID } from "node:crypto";
+import { WebSocket, WebSocketServer } from "ws";
 
 export interface BridgeRequest {
-  type: string;
-  nodeIds?: string[];
-  params?: Record<string, unknown>;
-  requestId: string;
+	type: string;
+	requestId: string;
+	nodeIds?: string[];
+	params?: Record<string, unknown>;
 }
 
 export interface BridgeResponse {
-  requestId: string;
-  data?: unknown;
-  error?: string;
+	type?: string;
+	requestId: string;
+	data?: unknown;
+	error?: string;
+	progress?: number;
+	message?: string;
 }
 
-export interface BridgeConfig {
-  port: number;
-  host?: string;
-  timeout?: number;
+interface PendingRequest {
+	resolve: (resp: BridgeResponse) => void;
+	reject: (err: Error) => void;
+	timer: NodeJS.Timeout;
 }
 
+/**
+ * Bridge manages the WebSocket connection from the Figma plugin.
+ * Only one plugin connection is maintained at a time.
+ */
 export class Bridge {
-  private wss: WebSocket.Server | null = null;
-  private ws: WebSocket | null = null;
-  private config: BridgeConfig;
-  private pendingRequests = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: NodeJS.Timeout }>();
+	private wss: WebSocketServer | null = null;
+	private conn: WebSocket | null = null;
+	private pending = new Map<string, PendingRequest>();
 
-  constructor(config: BridgeConfig) {
-    this.config = { timeout: 30000, host: 'localhost', ...config };
-  }
+	get connected(): boolean {
+		return this.conn?.readyState === WebSocket.OPEN;
+	}
 
-  start(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.wss = new WebSocket.Server({ port: this.config.port, host: this.config.host });
-      this.wss.on('listening', () => resolve());
-      this.wss.on('error', reject);
-      this.wss.on('connection', (ws) => {
-        this.ws = ws;
-        ws.on('message', (raw) => this.handleMessage(raw.toString()));
-        ws.on('close', () => { this.ws = null; });
-      });
-    });
-  }
+	start(port: number): void {
+		this.wss = new WebSocketServer({ port });
+		this.wss.on("connection", (ws) => {
+			if (this.conn && this.conn.readyState === WebSocket.OPEN) {
+				this.conn.close(1000, "replaced");
+			}
+			this.conn = ws;
+			console.error(`[bridge] plugin connected`);
 
-  stop(): Promise<void> {
-    return new Promise((resolve) => {
-      this.wss?.close(() => resolve());
-      this.wss = null;
-    });
-  }
+			ws.on("message", (raw) => {
+				const resp: BridgeResponse = JSON.parse(raw.toString());
 
-  isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
-  }
+				// Progress update — extend timeout
+				if (resp.progress && resp.requestId) {
+					const entry = this.pending.get(resp.requestId);
+					if (entry) {
+						clearTimeout(entry.timer);
+						entry.timer = setTimeout(
+							() => this.timeout(resp.requestId),
+							60_000,
+						);
+					}
+					return;
+				}
 
-  async send(type: string, params: Record<string, unknown> = {}, nodeIds?: string[]): Promise<unknown> {
-    if (!this.isConnected()) throw new Error('Not connected to Figma plugin');
-    const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this.pendingRequests.delete(requestId);
-        reject(new Error(`Request ${type} timed out after ${this.config.timeout}ms`));
-      }, this.config.timeout);
-      this.pendingRequests.set(requestId, { resolve, reject, timer });
-      const msg: BridgeRequest = { type, params, nodeIds, requestId };
-      this.ws!.send(JSON.stringify({ type: 'bridge-request', payload: msg }));
-    });
-  }
+				if (!resp.requestId) return;
 
-  private handleMessage(raw: string) {
-    let msg: { type: string; payload: BridgeResponse | { type: string; data?: unknown } };
-    try { msg = JSON.parse(raw); } catch { return; }
-    if (msg.type === 'bridge-response' && 'requestId' in msg.payload) {
-      const resp = msg.payload as BridgeResponse;
-      const pending = this.pendingRequests.get(resp.requestId);
-      if (pending) {
-        clearTimeout(pending.timer);
-        this.pendingRequests.delete(resp.requestId);
-        if (resp.error) pending.reject(new Error(resp.error));
-        else pending.resolve(resp.data);
-      }
-    }
-  }
+				const entry = this.pending.get(resp.requestId);
+				if (!entry) return;
+				this.pending.delete(resp.requestId);
+				clearTimeout(entry.timer);
+				entry.resolve(resp);
+			});
 
-  onProgress(callback: (data: unknown) => void) {
-    const orig = this.handleMessage.bind(this);
-    this.handleMessage = (raw: string) => {
-      let msg: { type: string; payload: unknown };
-      try { msg = JSON.parse(raw); } catch { orig(raw); return; }
-      if (msg.type === 'bridge-progress') {
-        callback(msg.payload);
-        return;
-      }
-      orig(raw);
-    };
-  }
+			ws.on("close", () => {
+				if (this.conn === ws) this.conn = null;
+				console.error(`[bridge] plugin disconnected`);
+			});
 
-  replaceConnection(ws: WebSocket) {
-    if (this.ws) this.ws.close();
-    this.ws = ws;
-    ws.on('message', (raw) => this.handleMessage(raw.toString()));
-    ws.on('close', () => { this.ws = null; });
-  }
+			ws.on("error", (err) => {
+				console.error(`[bridge] ws error: ${err.message}`);
+			});
+		});
 
-  getConnectionInfo() {
-    return {
-      connected: this.isConnected(),
-      pendingCount: this.pendingRequests.size,
-      serverPort: this.config.port,
-    };
-  }
+		console.error(`[bridge] listening on ws://127.0.0.1:${port}`);
+	}
+
+	send(
+		type: string,
+		nodeIds?: string[],
+		params?: Record<string, unknown>,
+	): Promise<BridgeResponse> {
+		if (!this.conn || this.conn.readyState !== WebSocket.OPEN) {
+			return Promise.reject(
+				new Error("Plugin not connected. Run the Figma plugin first."),
+			);
+		}
+
+		const requestId = randomUUID().slice(0, 8);
+		const timeout = type === "get_document" ? 60_000 : 30_000;
+
+		return new Promise((resolve, reject) => {
+			const timer = setTimeout(() => this.timeout(requestId), timeout);
+			this.pending.set(requestId, { resolve, reject, timer });
+
+			const req: BridgeRequest = { type, requestId, nodeIds, params };
+			this.conn?.send(JSON.stringify(req));
+		});
+	}
+
+	stop(): void {
+		for (const [_id, entry] of this.pending) {
+			clearTimeout(entry.timer);
+			entry.reject(new Error("bridge shutting down"));
+		}
+		this.pending.clear();
+		this.conn?.close();
+		this.wss?.close();
+	}
+
+	private timeout(requestId: string): void {
+		const entry = this.pending.get(requestId);
+		if (!entry) return;
+		this.pending.delete(requestId);
+		entry.reject(new Error(`Request ${requestId} timed out`));
+	}
 }
