@@ -541,3 +541,22 @@ function detachInstance(params) {
   instance.detachInstance();
   return { id: instance.id, name: instance.name, type: instance.type };
 }
+
+function deleteNode(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node) throw new Error('Node not found');
+  const name = node.name;
+  node.remove();
+  return { deleted: name };
+}
+
+function moveNode(params) {
+  const node = figma.getNodeById(params.nodeId);
+  if (!node) throw new Error('Node not found');
+  const parent = figma.getNodeById(params.parentId);
+  if (!parent || !('appendChild' in parent)) throw new Error('Invalid parent');
+  parent.appendChild(node);
+  if (params.x !== undefined) node.x = params.x;
+  if (params.y !== undefined) node.y = params.y;
+  return { id: node.id, name: node.name, parentId: parent.id };
+}
