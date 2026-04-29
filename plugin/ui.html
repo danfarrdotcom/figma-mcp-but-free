@@ -16,24 +16,77 @@
   <div id="status" class="disconnected">Disconnected</div>
   <button id="connect">Connect</button>
   <div id="log"></div>
+
   <script>
     const statusEl = document.getElementById('status');
     const logEl = document.getElementById('log');
     const connectBtn = document.getElementById('connect');
     let ws = null;
     let reconnectTimer = null;
+
     function log(msg) {
       const line = document.createElement('div');
-      line.textContent = msg;
+      line.textContent = `${new Date().toLocaleTimeString()} ${msg}`;
       logEl.prepend(line);
+      if (logEl.children.length > 50) logEl.lastChild.remove();
     }
+
     function setStatus(state, text) {
       statusEl.textContent = text;
       statusEl.className = state;
     }
-    connectBtn.addEventListener('click', () => {
+
+    function connect() {
+      if (ws && ws.readyState === WebSocket.OPEN) return;
       setStatus('connecting', 'Connecting...');
-    });
+
+      ws = new WebSocket('ws://127.0.0.1:1994');
+
+      ws.onopen = () => {
+        setStatus('connected', 'Connected');
+        log('Connected to MCP server');
+        connectBtn.textContent = 'Reconnect';
+      };
+
+      ws.onmessage = (event) => {
+        const req = JSON.parse(event.data);
+        log(`← ${req.type} (${req.requestId})`);
+        parent.postMessage({ pluginMessage: { type: 'bridge-request', payload: req } }, '*');
+      };
+
+      ws.onclose = () => {
+        setStatus('disconnected', 'Disconnected');
+        log('Disconnected');
+        scheduleReconnect();
+      };
+
+      ws.onerror = () => {
+        setStatus('disconnected', 'Connection failed');
+      };
+    }
+
+    function scheduleReconnect() {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(connect, 3000);
+    }
+
+    function sendResponse(resp) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(resp));
+        log(`→ ${resp.requestId} ${resp.error ? 'ERR' : 'OK'}`);
+      }
+    }
+
+    connectBtn.addEventListener('click', connect);
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (msg && msg.type === 'bridge-response') {
+        sendResponse(msg.payload);
+      }
+    };
+
+    connect();
   </script>
 </body>
 </html>
