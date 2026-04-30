@@ -11,8 +11,8 @@ const bridge = new Bridge();
 bridge.start(WS_PORT);
 
 const server = new McpServer({
-  name: "figma-mcp-but-free",
-  version: "0.1.0",
+	name: "figma-mcp-but-free",
+	version: "0.1.0",
 });
 
 registerAllTools(server, bridge);
@@ -22,11 +22,11 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 
 process.on("SIGINT", () => {
-  bridge.stop();
-  process.exit(0);
+	bridge.stop();
+	process.exit(0);
 });
 
 process.on("SIGTERM", () => {
-  bridge.stop();
-  process.exit(0);
+	bridge.stop();
+	process.exit(0);
 });
