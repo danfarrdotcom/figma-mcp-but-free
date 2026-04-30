@@ -2,8 +2,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Bridge } from "./bridge.js";
-import { registerAllTools } from "./tools/index.js";
 import { registerPrompts } from "./prompts.js";
+import { registerAllTools } from "./tools/index.js";
 
 const WS_PORT = parseInt(process.env.FIGMA_BRIDGE_PORT || "1994", 10);
 
