@@ -1,5 +1,5 @@
-import { WebSocketServer, WebSocket } from "ws";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
+import { WebSocket, WebSocketServer } from "ws";
 
 export interface BridgeRequest {
 	type: string;
@@ -102,12 +102,12 @@ export class Bridge {
 			this.pending.set(requestId, { resolve, reject, timer });
 
 			const req: BridgeRequest = { type, requestId, nodeIds, params };
-			this.conn!.send(JSON.stringify(req));
+			this.conn?.send(JSON.stringify(req));
 		});
 	}
 
 	stop(): void {
-		for (const [id, entry] of this.pending) {
+		for (const [_id, entry] of this.pending) {
 			clearTimeout(entry.timer);
 			entry.reject(new Error("bridge shutting down"));
 		}

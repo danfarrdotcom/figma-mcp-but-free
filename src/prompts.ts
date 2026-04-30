@@ -1,10 +1,10 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 export function registerPrompts(server: McpServer) {
 	server.prompt(
 		"read_design_strategy",
 		"Strategy for reading and understanding Figma designs",
-		(params) => [
+		(_params) => [
 			{
 				role: "user",
 				content: {
@@ -18,7 +18,7 @@ export function registerPrompts(server: McpServer) {
 	server.prompt(
 		"design_strategy",
 		"General strategy for working with Figma designs via MCP",
-		(params) => [
+		(_params) => [
 			{
 				role: "user",
 				content: {
@@ -32,7 +32,7 @@ export function registerPrompts(server: McpServer) {
 	server.prompt(
 		"text_replacement_strategy",
 		"Strategy for finding and replacing text in Figma nodes",
-		(params) => [
+		(_params) => [
 			{
 				role: "user",
 				content: {
