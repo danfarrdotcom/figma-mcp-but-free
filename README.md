@@ -23,14 +23,20 @@ A Model Context Protocol (MCP) server that bridges Claude to Figma via WebSocket
 
 3. Register the MCP server in your client.
 
+   A ready-to-use workspace config is included at `.vscode/mcp.json`.
+
+    Use one of these launch modes:
+    - Local build: `node /absolute/path/to/dist/index.js`
+    - NPX package: `npx -y figma-mcp-but-free`
+
     VS Code (`.vscode/mcp.json` or user MCP config):
     ```json
     {
        "servers": {
           "figma-mcp-but-free": {
              "type": "stdio",
-             "command": "node",
-             "args": ["/Users/drfarr/code/figma-mcp-for-nothing/dist/index.js"]
+             "command": "npx",
+             "args": ["-y", "figma-mcp-but-free"]
           }
        }
     }
@@ -41,12 +47,14 @@ A Model Context Protocol (MCP) server that bridges Claude to Figma via WebSocket
     {
        "mcpServers": {
           "figma-mcp-but-free": {
-             "command": "node",
-             "args": ["/Users/drfarr/code/figma-mcp-for-nothing/dist/index.js"]
+             "command": "npx",
+             "args": ["-y", "figma-mcp-but-free"]
           }
        }
     }
     ```
+
+    If you are running from a local checkout instead of an npm package, keep using `node` with the absolute `dist/index.js` path.
 
     Optional: set `FIGMA_BRIDGE_PORT` if you need a non-default port.
 
