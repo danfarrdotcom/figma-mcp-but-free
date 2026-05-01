@@ -57,22 +57,23 @@ on:
 
 ### Steps
 
-1. **Checkout** repo with full history (needed for `git log` diffing)
+1. **Checkout** repo with full history (`fetch-depth: 0`) and `persist-credentials: true` (so `GITHUB_TOKEN` is embedded in the remote URL)
 2. **Identify previous tag** — find latest `v*` tag using `git describe --tags --abbrev=0 2>/dev/null`. If none exists, scan all commits.
 3. **Collect commits** — `git log <previous_tag>..HEAD --oneline`
 4. **Filter releasable commits** — grep for `^feat:`, `^feat!:`, `^fix:`, and scan for `BREAKING CHANGE` in commit bodies
 5. **Early exit** — if no releasable commits, exit with code 0 silently
 6. **Calculate bump** — determine major/minor/patch from highest-precedence commit type
 7. **Calculate new version** — read current `package.json` version, apply bump
-8. **Update `package.json`** — use `node -p` to set the new version field
-9. **Generate CHANGELOG section** — format grouped commits by type
-10. **Prepend to `CHANGELOG.md`** — create file if first release, otherwise insert after existing `# Changelog` header
-11. **Configure git identity** — `git config user.name "dan"` and `git config user.email "hello@danfarr.com"`
-12. **Commit changes** — `git commit -m "chore(release): vX.Y.Z [skip ci]"`
-13. **Push to main** — use `https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/...` to push past macOS keychain caching
-14. **Create tag** — `git tag vX.Y.Z`
-15. **Push tag** — `git push origin vX.Y.Z`
-16. **Create GitHub Release** — use `softprops/action-gh-release@v2` with the changelog section as the release body
+8. **Output new version** — write to `$GITHUB_OUTPUT` for use in later steps
+9. **Update `package.json`** — use `node -p` to set the new version field
+10. **Generate CHANGELOG section** — format grouped commits by type, write to a temp file
+11. **Prepend to `CHANGELOG.md`** — create file if first release, otherwise insert after existing `# Changelog` header
+12. **Configure git identity** — `git config user.name "dan"` and `git config user.email "hello@danfarr.com"`
+13. **Commit changes** — `git commit -m "chore(release): vX.Y.Z [skip ci]"`
+14. **Push to main** — `git push origin main` (token already embedded via `persist-credentials: true`)
+15. **Create tag** — `git tag vX.Y.Z`
+16. **Push tag** — `git push origin vX.Y.Z`
+17. **Create GitHub Release** — use `softprops/action-gh-release@v2` with `tag_name: ${{ steps.bump.outputs.version }}` and `body` set to the changelog section content
 
 ### [skip ci] Strategy
 
@@ -102,13 +103,13 @@ The `GITHUB_TOKEN` has `contents: write` permission, sufficient for all three op
 
 ### New files
 - `CHANGELOG.md` — created on first release
-- `.github/workflows/release-on-main.yml` — replaced with new workflow
 
 ### Modified files
 - `package.json` — version field updated on each release
+- `.github/workflows/release-on-main.yml` — existing non-semver workflow replaced with new semver workflow
 
 ### Removed files
-- `.github/workflows/release-on-main.yml` (existing non-semver version) — replaced in place
+- None (existing workflow is replaced in place)
 
 ## Success Criteria
 
