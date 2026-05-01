@@ -13,24 +13,53 @@ A Model Context Protocol (MCP) server that bridges Claude to Figma via WebSocket
 
 1. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 
 2. Build the server:
    ```bash
-   npm run build
+   bun run build
    ```
 
-3. Install the Figma plugin:
+3. Register the MCP server in your client.
+
+    VS Code (`.vscode/mcp.json` or user MCP config):
+    ```json
+    {
+       "servers": {
+          "figma-mcp-but-free": {
+             "type": "stdio",
+             "command": "node",
+             "args": ["/Users/drfarr/code/figma-mcp-for-nothing/dist/index.js"]
+          }
+       }
+    }
+    ```
+
+    Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+    ```json
+    {
+       "mcpServers": {
+          "figma-mcp-but-free": {
+             "command": "node",
+             "args": ["/Users/drfarr/code/figma-mcp-for-nothing/dist/index.js"]
+          }
+       }
+    }
+    ```
+
+    Optional: set `FIGMA_BRIDGE_PORT` if you need a non-default port.
+
+4. Install the Figma plugin:
    - Open Figma → Plugins → Development → Import plugin from manifest
    - Select `plugin/manifest.json`
 
-4. Start the MCP server:
+5. Start the MCP server:
    ```bash
-   npm start
+   bun run start
    ```
 
-5. Connect the Figma plugin to the WebSocket server (default: `ws://localhost:8080`)
+6. Run the Figma plugin and connect it to the WebSocket bridge (default: `ws://127.0.0.1:1994`)
 
 ## Tools
 
