@@ -29,6 +29,7 @@ export function registerExportTools(server: McpServer, bridge: Bridge) {
 		server.tool(tool.name, tool.description, tool.inputSchema, async (args) => {
 			const result = await bridge.send(
 				tool.name,
+				undefined,
 				args as Record<string, unknown>,
 			);
 			return {
