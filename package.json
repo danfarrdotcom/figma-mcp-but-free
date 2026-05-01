@@ -1,6 +1,6 @@
 {
 	"name": "figma-mcp-but-free",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Figma MCP server — free, no rate limits, full read/write via plugin bridge",
 	"packageManager": "bun@1.2.10",
 	"author": {
