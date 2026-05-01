@@ -154,9 +154,9 @@ function getReactions(nodeId) {
 // Add these functions to the end of plugin/code.js
 
 function getDesignContext(nodeIds, params) {
-  const depth = params?.depth ?? 2;
-  const detail = params?.detail || 'compact';
-  const root = nodeIds?.[0] ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
+  var depth = (params && params.depth !== undefined) ? params.depth : 2;
+  var detail = (params && params.detail) || 'compact';
+  var root = (nodeIds && nodeIds[0]) ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
   return serializeNodeWithDetail(root, depth, detail);
 }
 
@@ -208,18 +208,18 @@ function scanNodesByTypes(params) {
 }
 
 async function getScreenshot(nodeIds, params) {
-  const node = nodeIds?.[0] ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
+  const node = (nodeIds && nodeIds[0]) ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
   if (!node || !('exportAsync' in node)) throw new Error('Node not exportable');
-  const format = params?.format || 'PNG';
-  const scale = params?.scale || 2;
-  const settings = { format, ...(format !== 'SVG' ? { constraint: { type: 'SCALE', value: scale } } : {}) };
+  const format = (params && params.format) || 'PNG';
+  const scale = (params && params.scale) || 2;
+  const settings = format !== 'SVG' ? { format: format, constraint: { type: 'SCALE', value: scale } } : { format: format };
   const bytes = await node.exportAsync(settings);
   const base64 = figma.base64Encode(bytes);
   return { exports: [{ nodeId: node.id, nodeName: node.name, base64, width: node.width, height: node.height }] };
 }
 
 function exportTokens(params) {
-  const format = params?.format || 'json';
+  const format = (params && params.format) || 'json';
   const collections = figma.variables.getLocalVariableCollections();
   const paintStyles = figma.getLocalPaintStyles();
   const tokens = { variables: {}, colors: {} };
@@ -237,9 +237,9 @@ function exportTokens(params) {
 function tokensToCSS(tokens) {
   let css = ':root {\n';
   for (const [name, value] of Object.entries(tokens.colors)) {
-    if (Array.isArray(value) && value[0]?.color) {
+    if (Array.isArray(value) && value[0] && value[0].color) {
       const c = value[0].color;
-      css += `  --${name.replace(/\s+/g, '-').toLowerCase()}: rgba(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)}, ${c.a ?? 1});\n`;
+      css += `  --${name.replace(/\s+/g, '-').toLowerCase()}: rgba(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)}, ${c.a !== undefined ? c.a : 1});\n`;
     }
   }
   css += '}\n';
@@ -247,9 +247,9 @@ function tokensToCSS(tokens) {
 }
 
 async function getDesignContext(nodeIds, params) {
-  const depth = params?.depth ?? 2;
-  const detail = params?.detail || 'compact';
-  const root = nodeIds?.[0] ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
+  var depth = (params && params.depth !== undefined) ? params.depth : 2;
+  var detail = (params && params.detail) || 'compact';
+  var root = (nodeIds && nodeIds[0]) ? figma.getNodeById(nodeIds[0]) : figma.currentPage;
   return serializeNodeWithDetail(root, depth, detail);
 }
 
@@ -404,8 +404,8 @@ function setVisibility(params) {
 function setDimensions(params) {
   const node = figma.getNodeById(params.nodeId);
   if (!('resize' in node)) throw new Error('Node does not support resizing');
-  const w = params.width ?? node.width;
-  const h = params.height ?? node.height;
+  const w = params.width !== undefined ? params.width : node.width;
+  const h = params.height !== undefined ? params.height : node.height;
   node.resize(w, h);
   if (params.x !== undefined) node.x = params.x;
   if (params.y !== undefined) node.y = params.y;
@@ -466,7 +466,7 @@ function createVariable(params) {
   const collection = figma.variables.getVariableCollectionById(params.collectionId);
   if (!collection) throw new Error('Collection not found');
   const variable = figma.variables.createVariable(params.name, collection.id, params.resolvedType);
-  const firstMode = collection.modes[0]?.modeId;
+  const firstMode = collection.modes[0] ? collection.modes[0].modeId : undefined;
   if (firstMode && params.defaultValue !== undefined) {
     figma.variables.setVariableValue(variable, { [firstMode]: params.defaultValue });
   }
@@ -554,9 +554,9 @@ function ungroupNode(params) {
   if (!node || !('children' in node)) throw new Error('Node is not a group');
   const parent = node.parent;
   const idx = parent ? parent.children.indexOf(node) : 0;
-  const children = [...node.children];
+  const children = node.children.slice();
   for (const child of children) {
-    parent?.insertChild(idx, child);
+    if (parent) parent.insertChild(idx, child);
   }
   node.remove();
   return { ungrouped: children.map(c => ({ id: c.id, name: c.name })) };
