@@ -2,6 +2,8 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Bridge } from "../bridge.js";
 
+const arbitraryObjectSchema = z.object({}).passthrough();
+
 const createToolDefs = [
 	{
 		name: "create_frame",
@@ -15,7 +17,7 @@ const createToolDefs = [
 			parentId: z.string().optional(),
 			layoutMode: z.enum(["HORIZONTAL", "VERTICAL", "NONE"]).optional(),
 			itemSpacing: z.number().optional(),
-			fills: z.array(z.any()).optional(),
+			fills: z.array(arbitraryObjectSchema).optional(),
 		},
 	},
 	{
@@ -29,7 +31,7 @@ const createToolDefs = [
 			height: z.number(),
 			parentId: z.string().optional(),
 			cornerRadius: z.number().optional(),
-			fills: z.array(z.any()).optional(),
+			fills: z.array(arbitraryObjectSchema).optional(),
 		},
 	},
 	{
@@ -42,7 +44,7 @@ const createToolDefs = [
 			width: z.number(),
 			height: z.number(),
 			parentId: z.string().optional(),
-			fills: z.array(z.any()).optional(),
+			fills: z.array(arbitraryObjectSchema).optional(),
 		},
 	},
 	{

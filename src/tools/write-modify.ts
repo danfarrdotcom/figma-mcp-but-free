@@ -2,6 +2,8 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Bridge } from "../bridge.js";
 
+const arbitraryObjectSchema = z.object({}).passthrough();
+
 const modifyToolDefs = [
 	{
 		name: "set_text",
@@ -22,14 +24,14 @@ const modifyToolDefs = [
 	{
 		name: "set_fills",
 		description: "Set fill paints on a node",
-		inputSchema: { nodeId: z.string(), fills: z.array(z.any()) },
+		inputSchema: { nodeId: z.string(), fills: z.array(arbitraryObjectSchema) },
 	},
 	{
 		name: "set_strokes",
 		description: "Set stroke paints on a node",
 		inputSchema: {
 			nodeId: z.string(),
-			strokes: z.array(z.any()),
+			strokes: z.array(arbitraryObjectSchema),
 			strokeWeight: z.number().optional(),
 			strokeAlign: z.enum(["INSIDE", "OUTSIDE", "CENTER"]).optional(),
 		},
@@ -81,7 +83,7 @@ const modifyToolDefs = [
 	{
 		name: "set_effects",
 		description: "Set effects (shadows, blurs) on a node",
-		inputSchema: { nodeId: z.string(), effects: z.array(z.any()) },
+		inputSchema: { nodeId: z.string(), effects: z.array(arbitraryObjectSchema) },
 	},
 ];
 

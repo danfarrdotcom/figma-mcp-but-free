@@ -2,11 +2,13 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Bridge } from "../bridge.js";
 
+const arbitraryObjectSchema = z.object({}).passthrough();
+
 const writeOtherToolDefs = [
 	{
 		name: "create_paint_style",
 		description: "Create a new paint style",
-		inputSchema: { name: z.string(), paints: z.array(z.any()) },
+		inputSchema: { name: z.string(), paints: z.array(arbitraryObjectSchema) },
 	},
 	{
 		name: "create_text_style",
@@ -20,12 +22,15 @@ const writeOtherToolDefs = [
 	{
 		name: "create_effect_style",
 		description: "Create a new effect style",
-		inputSchema: { name: z.string(), effects: z.array(z.any()) },
+		inputSchema: { name: z.string(), effects: z.array(arbitraryObjectSchema) },
 	},
 	{
 		name: "create_grid_style",
 		description: "Create a new grid style",
-		inputSchema: { name: z.string(), layoutGrids: z.array(z.any()) },
+		inputSchema: {
+			name: z.string(),
+			layoutGrids: z.array(arbitraryObjectSchema),
+		},
 	},
 	{
 		name: "apply_style",
