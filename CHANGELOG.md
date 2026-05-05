@@ -1,3 +1,9 @@
+## [0.4.0] - 2026-05-05
+
+### Features
+- update arbitraryObjectSchema to use z.record for improved validation
+
+
 ## [0.3.1] - 2026-05-05
 
 ### Bug Fixes
