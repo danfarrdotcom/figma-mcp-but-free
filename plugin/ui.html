@@ -37,12 +37,16 @@
     }
 
     function connect() {
-      if (ws && ws.readyState === WebSocket.OPEN) return;
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
       setStatus('connecting', 'Connecting...');
 
       ws = new WebSocket('ws://127.0.0.1:1994');
 
       ws.onopen = () => {
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
         setStatus('connected', 'Connected');
         log('Connected to MCP server');
         connectBtn.textContent = 'Reconnect';
@@ -54,9 +58,17 @@
         parent.postMessage({ pluginMessage: { type: 'bridge-request', payload: req } }, '*');
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         setStatus('disconnected', 'Disconnected');
-        log('Disconnected');
+        log(`Disconnected (code=${event.code}${event.reason ? `, reason=${event.reason}` : ''})`);
+
+        // If the bridge explicitly replaced this connection, do not auto-reconnect.
+        // This prevents two plugin windows from endlessly reconnecting and kicking each other.
+        if (event.reason === 'replaced') {
+          log('Connection replaced by another plugin window; auto-reconnect disabled for this window');
+          return;
+        }
+
         scheduleReconnect();
       };
 
