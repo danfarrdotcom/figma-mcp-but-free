@@ -2,7 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Bridge } from "../bridge.js";
 
-const arbitraryObjectSchema = z.object({}).passthrough();
+const arbitraryObjectSchema = z.record(z.string(), z.unknown());
 
 const modifyToolDefs = [
 	{
