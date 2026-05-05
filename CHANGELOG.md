@@ -1,3 +1,9 @@
+## [0.3.1] - 2026-05-05
+
+### Bug Fixes
+- publish package on main releases
+
+
 ## [0.3.0] - 2026-05-05
 
 ### Features
