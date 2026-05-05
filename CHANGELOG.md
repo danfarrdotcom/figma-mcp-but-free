@@ -1,3 +1,9 @@
+## [0.4.1] - 2026-05-05
+
+### Bug Fixes
+- enhance WebSocket connection handling and logging
+
+
 ## [0.4.0] - 2026-05-05
 
 ### Features
