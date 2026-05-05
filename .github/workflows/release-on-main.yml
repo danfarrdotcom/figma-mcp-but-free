@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -18,6 +19,23 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.10
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build package
+        run: bun run build
 
       - name: Calculate version bump and changelog
         id: bump
@@ -194,3 +212,9 @@ jobs:
           body_path: /tmp/changelog_section.md
           make_latest: true
           generate_release_notes: false
+
+      - name: Publish to npm
+        if: steps.bump.outputs.skip != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
