@@ -1,9 +1,20 @@
-import { exportTools } from "./export.js";
-import { metaTools } from "./meta.js";
-import { readTools } from "./read.js";
-import { writeCreateTools } from "./write-create.js";
-import { writeModifyTools } from "./write-modify.js";
-import { writeOtherTools } from "./write-other.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { Bridge } from "../bridge.js";
+import { exportTools, registerExportTools } from "./export.js";
+import { metaTools, registerMetaTools } from "./meta.js";
+import { readTools, registerReadTools } from "./read.js";
+import { registerWriteCreateTools, writeCreateTools } from "./write-create.js";
+import { registerWriteModifyTools, writeModifyTools } from "./write-modify.js";
+import { registerWriteOtherTools, writeOtherTools } from "./write-other.js";
+
+export function registerAllTools(server: McpServer, bridge: Bridge) {
+	registerReadTools(server, bridge);
+	registerWriteCreateTools(server, bridge);
+	registerWriteModifyTools(server, bridge);
+	registerWriteOtherTools(server, bridge);
+	registerExportTools(server, bridge);
+	registerMetaTools(server, bridge);
+}
 
 export const allTools = [
 	...readTools,

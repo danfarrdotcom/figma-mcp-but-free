@@ -85,8 +85,7 @@ export class Bridge {
 
 	send(
 		type: string,
-		nodeIds?: string[],
-		params?: Record<string, unknown>,
+		args?: Record<string, unknown>,
 	): Promise<BridgeResponse> {
 		if (!this.conn || this.conn.readyState !== WebSocket.OPEN) {
 			return Promise.reject(
@@ -101,6 +100,8 @@ export class Bridge {
 			const timer = setTimeout(() => this.timeout(requestId), timeout);
 			this.pending.set(requestId, { resolve, reject, timer });
 
+			const nodeIds = args?.nodeIds as string[] | undefined;
+			const params = args;
 			const req: BridgeRequest = { type, requestId, nodeIds, params };
 			this.conn?.send(JSON.stringify(req));
 		});

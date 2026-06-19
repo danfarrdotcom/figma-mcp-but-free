@@ -4,42 +4,48 @@ export function registerPrompts(server: McpServer) {
 	server.prompt(
 		"read_design_strategy",
 		"Strategy for reading and understanding Figma designs",
-		(_params) => [
-			{
-				role: "user",
-				content: {
-					type: "text",
-					text: "Analyze this Figma design structure...",
+		() => ({
+			messages: [
+				{
+					role: "user" as const,
+					content: {
+						type: "text" as const,
+						text: "Analyze this Figma design structure...",
+					},
 				},
-			},
-		],
+			],
+		}),
 	);
 
 	server.prompt(
 		"design_strategy",
 		"General strategy for working with Figma designs via MCP",
-		(_params) => [
-			{
-				role: "user",
-				content: {
-					type: "text",
-					text: "Help me work with this Figma design...",
+		() => ({
+			messages: [
+				{
+					role: "user" as const,
+					content: {
+						type: "text" as const,
+						text: "Help me work with this Figma design...",
+					},
 				},
-			},
-		],
+			],
+		}),
 	);
 
 	server.prompt(
 		"text_replacement_strategy",
 		"Strategy for finding and replacing text in Figma nodes",
-		(_params) => [
-			{
-				role: "user",
-				content: {
-					type: "text",
-					text: "Find and replace text across Figma nodes...",
+		() => ({
+			messages: [
+				{
+					role: "user" as const,
+					content: {
+						type: "text" as const,
+						text: "Find and replace text across Figma nodes...",
+					},
 				},
-			},
-		],
+			],
+		}),
 	);
 }
