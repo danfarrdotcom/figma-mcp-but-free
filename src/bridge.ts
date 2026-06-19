@@ -83,10 +83,7 @@ export class Bridge {
 		console.error(`[bridge] listening on ws://127.0.0.1:${port}`);
 	}
 
-	send(
-		type: string,
-		args?: Record<string, unknown>,
-	): Promise<BridgeResponse> {
+	send(type: string, args?: Record<string, unknown>): Promise<BridgeResponse> {
 		if (!this.conn || this.conn.readyState !== WebSocket.OPEN) {
 			return Promise.reject(
 				new Error("Plugin not connected. Run the Figma plugin first."),
